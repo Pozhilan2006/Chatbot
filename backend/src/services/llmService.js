@@ -1,36 +1,40 @@
-const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 const SYSTEM_PROMPT = require('../utils/systemPrompt');
 require('dotenv').config();
 
-const configuration = {
-    apiKey: process.env.LLM_API_KEY,
-    baseURL: process.env.LLM_API_URL,
-};
-
-// Check if baseURL is valid and not empty for generic OpenAI compatible APIs
-if (!configuration.baseURL || configuration.baseURL === '') {
-    delete configuration.baseURL;
-}
-
-const openai = new OpenAI(configuration);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const parseUserIntent = async (userMessage, walletAddress) => {
     try {
-        const completion = await openai.chat.completions.create({
-            model: process.env.LLM_MODEL || 'gpt-4-turbo-preview',
-            messages: [
-                { role: 'system', content: SYSTEM_PROMPT },
-                { role: 'user', content: `User Wallet: ${walletAddress}\nMessage: ${userMessage}` },
-            ],
-            response_format: { type: 'json_object' },
-            max_tokens: 500,
+        // Initialize the model
+        // Using gemini-1.5-flash as default if not specified, it's fast and good for this executing tasks
+        const model = genAI.getGenerativeModel({
+            model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
+            systemInstruction: SYSTEM_PROMPT, // Pass system prompt here
         });
 
-        const content = completion.choices[0].message.content;
-        const parsed = JSON.parse(content);
+        const prompt = `User Wallet: ${walletAddress}\nMessage: ${userMessage}`;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        // Clean up the response to ensure valid JSON
+        let jsonString = text.replace(/```json\n?|\n?```/g, "").trim();
+
+        // Sometimes Gemini adds extra text, try to find the first { and last }
+        const firstBrace = jsonString.indexOf('{');
+        const lastBrace = jsonString.lastIndexOf('}');
+
+        if (firstBrace !== -1 && lastBrace !== -1) {
+            jsonString = jsonString.substring(firstBrace, lastBrace + 1);
+        }
+
+        const parsed = JSON.parse(jsonString);
         return parsed;
+
     } catch (error) {
-        console.error('LLM Intent Parsing Error:', error);
+        console.error('LLM Intent Parsing Error (Gemini):', error);
         return {
             intent_detected: false,
             error: 'Failed to process intent.',
