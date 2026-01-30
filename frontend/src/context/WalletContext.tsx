@@ -27,20 +27,34 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     // For safety/strictness, we might require explicit button press every reload or check existing permissions.
     // Checking existing permissions provided nothing changed.
     useEffect(() => {
-        const checkConnection = async () => {
-            if (typeof window !== 'undefined' && (window as any).ethereum) {
-                const provider = new ethers.BrowserProvider((window as any).ethereum);
-                const accounts = await provider.listAccounts();
+        if (typeof window !== 'undefined' && (window as any).ethereum) {
+            const ethereum = (window as any).ethereum;
+
+            const handleAccountsChanged = async (accounts: string[]) => {
                 if (accounts.length > 0) {
-                    // If we have accounts, we can reconnect silently
-                    // But let's keep it manual for "CTA: Connect Wallet" flow explicit trigger,
-                    // OR auto-connect if strict UX not demanded.
-                    // User Request: "On clicking “Connect Wallet” -> Connect MetaMask".
-                    // Implies manual.
+                    // Refresh state if account changed
+                    const state = await connectWallet();
+                    setWallet(state);
+                } else {
+                    // Disconnected
+                    setWallet(INITIAL_WALLET_STATE);
                 }
-            }
-        };
-        checkConnection();
+            };
+
+            const handleChainChanged = () => {
+                window.location.reload();
+            };
+
+            ethereum.on('accountsChanged', handleAccountsChanged);
+            ethereum.on('chainChanged', handleChainChanged);
+
+            return () => {
+                if (ethereum.removeListener) {
+                    ethereum.removeListener('accountsChanged', handleAccountsChanged);
+                    ethereum.removeListener('chainChanged', handleChainChanged);
+                }
+            };
+        }
     }, []);
 
     return (

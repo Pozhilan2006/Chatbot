@@ -8,9 +8,15 @@ import { Wallet, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function Navbar() {
-    const { isConnected, connect, address } = useWallet();
+    const { isConnected, connect, address, error } = useWallet();
     const router = useRouter();
     const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        if (error) {
+            alert(`Connection Error: ${error}`);
+        }
+    }, [error]);
 
     // Redirect if connected
     useEffect(() => {
