@@ -14,17 +14,6 @@ app.use(express.json());
 // Routes
 app.use('/api/intent', intentRoutes);
 
-// Root Test Route (User Req #4)
-app.get('/', (req, res) => {
-  res.send('Backend is alive');
-});
-
-// Guaranteed Test Route (User Req #5)
-app.post('/parse-intent', (req, res) => {
-  console.log('DIRECT ROUTE HIT:', req.body);
-  res.json({ status: 'ok', source: 'direct-route', received: req.body });
-});
-
 // Health check
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'intent-parser-backend' });
