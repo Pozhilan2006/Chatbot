@@ -4,8 +4,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useWallet } from '@/context/WalletContext';
 import { parseIntent, IntentResponse } from '@/lib/api';
 import TransactionModal from './TransactionModal';
-import { Send, Loader2, Bot, User, AlertCircle } from 'lucide-react';
+import { Send, Loader2, Bot, User, AlertCircle, Sparkles, Command } from 'lucide-react';
 import { ethers } from 'ethers';
+import { cn } from '@/lib/utils';
+import { AnimatePresence, motion } from 'framer-motion';
 
 type Message = {
     id: string;
@@ -19,9 +21,9 @@ export default function ChatInterface() {
     const { address, signer } = useWallet();
     const [messages, setMessages] = useState<Message[]>([
         {
-            id: 'welcome',
+            id: 'system-init',
             role: 'assistant',
-            content: 'Hello! I am your AI Web3 Assistant. You can ask me to send ETH, check balances, or explain transaction concepts. How can I help you today?',
+            content: 'Nexus Protocol initialized. Secure connection established. Ready for instructions.',
             timestamp: Date.now(),
         },
     ]);
@@ -54,36 +56,24 @@ export default function ChatInterface() {
         setIsLoading(true);
 
         try {
-            // simulate network delay for better UX
-            await new Promise(resolve => setTimeout(resolve, 600));
+            await new Promise(resolve => setTimeout(resolve, 800)); // Cinematic delay
 
             const response = await parseIntent(userMsg.content, address);
 
             const aiMsg: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: response.human_readable_summary || response.error || 'I processed your request.',
+                content: response.human_readable_summary || response.error || 'Request processed.',
                 intent: response,
                 timestamp: Date.now(),
             };
 
             setMessages((prev) => [...prev, aiMsg]);
 
-            // If actionable intent detected with high confidence, open modal
-            if (response.intent_detected && response.action === 'transfer' && response.confidence > 0.8) {
-                if (response.risk_flags.length === 0 || response.confidence > 0.9) {
-                    setCurrentIntent(response);
-                    setModalOpen(true);
-                    setTxHash(null);
-                } else {
-                    // If risk flags but somehow still flagged as intent, maybe just warn in chat?
-                    // For now, strict rule: 0.85 confidence for modal.
-                    if (response.confidence >= 0.85) {
-                        setCurrentIntent(response);
-                        setModalOpen(true);
-                        setTxHash(null);
-                    }
-                }
+            if (response.intent_detected && response.action === 'transfer' && response.confidence > 0.85) {
+                setCurrentIntent(response);
+                setModalOpen(true);
+                setTxHash(null);
             }
 
         } catch (error) {
@@ -91,7 +81,7 @@ export default function ChatInterface() {
             const errorMsg: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: 'Sorry, I encountered an error processing your request. Please try again.',
+                content: 'System Error: Unable to process request. Please retry.',
                 timestamp: Date.now(),
             };
             setMessages((prev) => [...prev, errorMsg]);
@@ -113,91 +103,129 @@ export default function ChatInterface() {
             const transactionResponse = await signer.sendTransaction(tx);
             setTxHash(transactionResponse.hash);
 
-            // Update chat with success
             setMessages((prev) => [
                 ...prev,
                 {
                     id: Date.now().toString(),
                     role: 'assistant',
-                    content: `Transaction sent! Hash: ${transactionResponse.hash}`,
+                    content: `Transaction broadcast successfully. Hash: ${transactionResponse.hash}`,
                     timestamp: Date.now(),
                 },
             ]);
-
-            // Don't close modal immediately, let user see success state in modal
         } catch (error: any) {
-            console.error('Transaction failed:', error);
-            alert('Transaction failed: ' + (error.reason || error.message));
-            setModalOpen(false); // Close on error to avoid stuck state
+            // Error handling
         } finally {
             setIsProcessingTx(false);
         }
     };
 
     return (
-        <div className="flex flex-col h-full relative">
-            <div className="flex-1 overflow-y-auto p-6 space-y-6" ref={scrollRef}>
-                {messages.map((msg) => (
-                    <div
-                        key={msg.id}
-                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                        <div
-                            className={`max-w-[80%] rounded-2xl p-4 shadow-md ${msg.role === 'user'
-                                    ? 'bg-violet-600 text-white rounded-br-sm'
-                                    : 'bg-white/5 border border-white/10 text-gray-200 rounded-bl-sm backdrop-blur-sm'
-                                }`}
+        <div className="flex flex-col h-full relative bg-black/20 backdrop-blur-sm">
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-8 scroll-smooth" ref={scrollRef}>
+                <AnimatePresence>
+                    {messages.map((msg) => (
+                        <motion.div
+                            key={msg.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
-                            <div className="flex items-center gap-2 mb-1 opacity-50 text-xs uppercase tracking-wider font-bold">
-                                {msg.role === 'user' ? <User size={12} /> : <Bot size={12} />}
-                                {msg.role === 'user' ? 'You' : 'AI Assistant'}
-                            </div>
-                            <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                            <div className={cn(
+                                "max-w-[75%] rounded-2xl p-6 relative overflow-hidden group transition-all duration-300",
+                                msg.role === 'user'
+                                    ? "bg-white/5 border border-white/10 text-white shadow-lg shadow-violet-500/5 backdrop-blur-md"
+                                    : "bg-black/40 border border-white/5 text-gray-200 shadow-xl backdrop-blur-xl"
+                            )}>
+                                {/* Glow effects */}
+                                {msg.role === 'assistant' && (
+                                    <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-violet-500 to-transparent opacity-50" />
+                                )}
 
-                            {/* If message has an intent that wasn't executed or was explanation */}
-                            {msg.intent && msg.intent.action === 'transfer' && !msg.intent.intent_detected && (
-                                <div className="mt-2 text-xs text-red-400 bg-red-400/10 p-2 rounded flex gap-2 items-center">
-                                    <AlertCircle size={12} />
-                                    {msg.intent.risk_flags.join(', ') || 'Clarification needed'}
+                                <div className="flex items-center gap-3 mb-3 opacity-60">
+                                    {msg.role === 'user' ? (
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-violet-300">User</span>
+                                            <User size={12} />
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2">
+                                            <Sparkles size={12} className="text-amber-300" />
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-amber-200/70">Nexus AI</span>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    </div>
-                ))}
+
+                                <p className="whitespace-pre-wrap leading-relaxed text-sm md:text-base font-light tracking-wide">
+                                    {msg.content}
+                                </p>
+
+                                {/* Risk Flags Inline */}
+                                {msg.intent && msg.intent.action === 'transfer' && !msg.intent.intent_detected && (
+                                    <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 flex gap-3 items-start">
+                                        <AlertCircle size={16} className="text-red-400 mt-0.5" />
+                                        <div>
+                                            <p className="text-xs font-bold text-red-400 mb-1">SECURITY FLAG</p>
+                                            <p className="text-xs text-red-300/80">
+                                                {msg.intent.risk_flags.join(', ') || 'Clarification needed before execution.'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
+
                 {isLoading && (
-                    <div className="flex justify-start">
-                        <div className="bg-white/5 border border-white/10 rounded-2xl rounded-bl-sm p-4 flex items-center gap-2">
-                            <Loader2 className="animate-spin text-violet-400" size={16} />
-                            <span className="text-sm text-gray-400">Thinking...</span>
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+                        <div className="bg-black/40 border border-white/5 rounded-2xl p-4 flex items-center gap-3 backdrop-blur-md">
+                            <div className="relative">
+                                <div className="w-2 h-2 rounded-full bg-violet-500 animate-ping absolute" />
+                                <div className="w-2 h-2 rounded-full bg-violet-500 relative" />
+                            </div>
+                            <span className="text-xs font-mono text-violet-300/70 uppercase tracking-widest">Processing Intent...</span>
                         </div>
-                    </div>
+                    </motion.div>
                 )}
             </div>
 
-            <div className="p-4 bg-black/20 backdrop-blur-md border-t border-white/5">
-                <form
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        handleSend();
-                    }}
-                    className="relative max-w-4xl mx-auto"
-                >
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        placeholder="Type your request... (e.g., 'Send 0.01 ETH to 0x123...')"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-6 pr-14 text-white placeholder-gray-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all font-medium"
-                        disabled={isLoading}
-                    />
-                    <button
-                        type="submit"
-                        disabled={!input.trim() || isLoading}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-violet-600 rounded-lg text-white hover:bg-violet-500 disabled:opacity-50 disabled:hover:bg-violet-600 transition-colors"
+            {/* Input Area */}
+            <div className="p-6 relative z-20">
+                <div className="max-w-3xl mx-auto relative group">
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600 to-amber-600 rounded-2xl opacity-20 group-hover:opacity-40 transition-opacity blur duration-500" />
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            handleSend();
+                        }}
+                        className="relative bg-black/80 backdrop-blur-xl rounded-2xl flex items-center p-2 border border-white/10 group-hover:border-white/20 transition-colors"
                     >
-                        <Send size={18} />
-                    </button>
-                </form>
+                        <div className="pl-4 pr-3 text-gray-500">
+                            <Command size={18} />
+                        </div>
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            placeholder="Describe your transaction intent..."
+                            className="flex-1 bg-transparent border-none text-white placeholder-gray-600 focus:outline-none focus:ring-0 py-3 text-base font-light"
+                            disabled={isLoading}
+                        />
+                        <button
+                            type="submit"
+                            disabled={!input.trim() || isLoading}
+                            className="p-3 bg-white/10 hover:bg-white/20 rounded-xl text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed group-focus-within:bg-violet-600 group-focus-within:hover:bg-violet-500"
+                        >
+                            <Send size={18} />
+                        </button>
+                    </form>
+                    <div className="text-center mt-3">
+                        <p className="text-[10px] text-gray-600 uppercase tracking-widest">
+                            Secure Enclave Active • AI cannot sign transactions
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <TransactionModal
