@@ -25,16 +25,27 @@ export const INITIAL_WALLET_STATE: WalletState = {
 };
 
 export const connectWallet = async (): Promise<WalletState> => {
-    if (typeof window === 'undefined' || !window.ethereum) {
+    console.log("Attempting to connect wallet...");
+    if (typeof window === 'undefined') {
+        console.error("Window is undefined");
+        return { ...INITIAL_WALLET_STATE, error: 'Window not defined' };
+    }
+
+    if (!window.ethereum) {
+        console.error("MetaMask (window.ethereum) not found");
         return { ...INITIAL_WALLET_STATE, error: 'MetaMask not installed' };
     }
 
     try {
+        console.log("Initializing BrowserProvider...");
         const provider = new ethers.BrowserProvider(window.ethereum);
-        // Request account access if needed
+
+        console.log("Requesting eth_requestAccounts...");
         const accounts = await provider.send('eth_requestAccounts', []);
+        console.log("Accounts received:", accounts);
 
         if (accounts.length === 0) {
+            console.warn("No accounts found");
             return { ...INITIAL_WALLET_STATE, error: 'No account found' };
         }
 
