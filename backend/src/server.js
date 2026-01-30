@@ -11,7 +11,19 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+// Routes
 app.use('/api/intent', intentRoutes);
+
+// Root Test Route (User Req #4)
+app.get('/', (req, res) => {
+  res.send('Backend is alive');
+});
+
+// Guaranteed Test Route (User Req #5)
+app.post('/parse-intent', (req, res) => {
+  console.log('DIRECT ROUTE HIT:', req.body);
+  res.json({ status: 'ok', source: 'direct-route', received: req.body });
+});
 
 // Health check
 app.get('/health', (req, res) => {
