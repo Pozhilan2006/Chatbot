@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0f0518;
+  --foreground: #ffffff;
+  --primary: #8b5cf6; /* Violet-500 */
+  --primary-foreground: #ffffff;
+  --secondary: #1e1b4b; /* Indigo-950 */
+  --secondary-foreground: #e0e7ff;
+  --muted: #312e81;
+  --muted-foreground: #a5b4fc;
+  --accent: #c084fc; /* Purple-400 */
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #4c1d95; /* Violet-900 */
+  --input: #2e1065;
+  --ring: #7c3aed;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--background)] text-[var(--foreground)] antialiased;
+    background-image: radial-gradient(at top center, #2e1065 0%, #0f0518 60%);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-violet-600 hover:bg-violet-700 text-white font-medium py-2 px-4 rounded-lg transition-all shadow-lg shadow-violet-500/20 active:scale-95;
+  }
+  .btn-secondary {
+    @apply bg-slate-800 hover:bg-slate-700 text-white font-medium py-2 px-4 rounded-lg transition-all border border-slate-700 active:scale-95;
+  }
+  .glass-panel {
+    @apply bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl;
+  }
+}
