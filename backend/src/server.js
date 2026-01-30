@@ -11,7 +11,6 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-// Routes
 app.use('/api/intent', intentRoutes);
 
 // Health check
