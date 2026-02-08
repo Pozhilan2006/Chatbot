@@ -1,77 +1,105 @@
-# Nexus AI Web3 Chatbot - Project Details
+# Nexus: AI-Powered Web3 Assistant - Comprehensive Documentation
 
-## Project Overview
-Nexus is an AI-powered Web3 assistant designed to simplify blockchain interactions through natural language. It acts as a bridge between users and the complex world of decentralized finance (DeFi), allowing users to check balances, execute transactions, and analyze market trends using simple text commands.
+## 1. Project Overview & Theoretical Framework
 
-## Technology Stack
+### 1.1 Introduction
+Nexus is a decentralized application (dApp) designed to solve the "Interaction Gap" in Web3. The current blockchain ecosystem demands a high level of technical literacy from users, requiring them to understand gas fees, hexadecimal addresses, and chain interactions. Nexus bridges this gap by introducing a **Natural Language Interface (NLI)** that translates human intent into machine-executable code.
 
-### Frontend
-- **Framework**: Next.js 14+ (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS v4 (Glassmorphism, Dark UI)
-- **Web3 Integration**: Ethers.js v6 (Direct window.ethereum injection)
-- **State Management**: React Context (WalletContext), SWR (Data Fetching)
-- **Icons**: Lucide React
-- **Animations**: Framer Motion
+### 1.2 Theoretical Basis: Intent-Centric Architectures
+In traditional imperative interaction models, users must specify *how* to perform an action (e.g., "Approve token", "Call swap function", "Sign transaction"). Nexus acts on a **declarative intent model**, where users specify *what* they want (e.g., "Swap ETH for DAI").
 
-### Backend
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Language**: JavaScript (CommonJS)
-- **AI Model**: Google Gemini 1.5/2.0 Flash (via @google/generative-ai SDK)
-- **Validation**: Zod (Schema validation), Ethers.js (Address validation)
-- **Security**: CORS, Environment Variables (.env), Input Sanitization
+The system leverages **Large Language Models (LLMs)** as a semantic translation layer. The theoretical innovation lies in treating the LLM not as a decision-maker, but as a **stochastic parser** that maps unstructured natural language space to a structured, deterministic transaction space.
 
-## Key Features
+### 1.3 The Trustless AI Paradox & Solution
+Integrating probabilities (AI) into deterministic systems (Blockchain) introduces security risks (hallucinations). Nexus resolves this using a **"Verify-then-Sign"** architecture:
+1.  **Isolation**: The AI operates off-chain and has no private key access.
+2.  **Proposal**: The AI generates a *candidate transaction*.
+3.  **Verification**: The frontend client (Secure Enclave) validates the candidate against on-chain state (balances, allowances).
+4.  **Execution**: The user manually cryptographically signs the valid proposal.
 
-1.  **Natural Language Transaction Intent**
-    - Users can type commands like "Send 0.05 ETH to 0x123..."
-    - The backend AI parses this into a structured JSON intent (`action`, `amount`, `recipient`, `chain`).
-    - The frontend validates this intent and presents a secure "Transaction Modal" for user confirmation before execution.
+---
 
-2.  **Market Intelligence Dashboard**
-    - **Top Movers**: Real-time tracking of top gainers in Memes, AI, and RWA categories.
-    - **Popular Tokens**: Market cap leaders across Ethereum, Solana, and BSC ecosystems.
-    - **Resilient Data Layer**: Implements a "Smart Fallback" system that switches to cached/mock data if the CoinGecko API rate limits are hit, ensuring 100% uptime for the UI.
+## 2. Technical Architecture
 
-3.  **Secure Enclave & Safety**
-    - **Non-Custodial**: The AI *cannot* sign transactions. It only constructs the payload. The user *must* manually sign via their MetaMask wallet.
-    - **Risk Analysis**: The AI analyzes transaction requests for potential security risks (e.g., interacting with known malicious contracts - *future scope*) and flags low-confidence intents.
+### 2.1 System Topology
+The application follows a modern **Client-Server-Chain** architecture:
 
-4.  **Premium UX/UI**
-    - Cinematic "Dark SaaS" aesthetic with ambient gradients and noise textures.
-    - Responsive Sidebar navigation and chat interface.
-    - Smooth transitions and loading states.
+*   **Presentation Layer (Frontend)**: Next.js (React) application ensuring SEO and fast rendering.
+*   **Intelligence Layer (Backend)**: Express.js API acting as the orchestrator between the Client and the LLM.
+*   **Protocol Layer (Blockchain)**: EVM-compatible networks (Ethereum, BSC, Polygon) accessed via JSON-RPC.
 
-## Project Structure
+### 2.2 Component Breakdown
+
+#### A. Frontend Core (`/frontend`)
+*   **Framework**: Next.js 14 (App Router).
+*   **State Management**: `WalletContext` (React Context API) manages the singleton state of the user's wallet connection, listening for `accountsChanged` and `chainChanged` events to maintain synchronization.
+*   **Security Enclave**: Private keys reside strictly in the user's browser extension (MetaMask). Only signed payloads leave the client.
+
+#### B. The Intelligence Engine (`/backend`)
+*   **LLM Integration**: Google Gemini 1.5/2.0 Flash/Pro models are utilized via the `@google/generative-ai` SDK.
+*   **Prompt Engineering**: A "System Persona" is injected into every context window, defining:
+    *   **Role**: Senior Web3 Assistant.
+    *   **Constraints**: JSON-only output, strict schema adherence.
+    *   **Safety**: Instructions to identify and flag potential malicious addresses (heuristic analysis).
+
+#### C. Data Services
+*   **Market Data**: Aggregated via `marketService.ts` from CoinGecko.
+*   **Resilience**: A **Circuit Breaker Pattern** is implemented. If external APIs fail (HTTP 4xx/5xx), the system seamlessly degrades to a local mock dataset, ensuring 100% UI availability.
+
+### 2.3 Data Flow: The Transaction Lifecycle
+
+1.  **User Input**: "Send 10 ETH to 0xabc..."
+2.  **Sanitization**: Input is scrubbed of potential XSS vectors.
+3.  **Intent Parsing (Backend)**:
+    *   LLM receives prompt + context (Current Balance, Chain).
+    *   LLM outputs JSON: `{ "action": "transfer", "amount": "10", "asset": "ETH", "to": "0xabc..." }`.
+4.  **Validation (Frontend)**:
+    *   Check `amount` <= `balance`.
+    *   Check `to` is a valid checksum address (EIP-55).
+5.  **Construction**: `ethers.js` creates the transaction object.
+6.  **Signing**: `TransactionModal` prompts user for signature.
+7.  **Broadcasting**: Signed transaction is sent to the mempool.
+
+---
+
+## 3. Implementation Details
+
+### 3.1 Tech Stack
+*   **Frontend**: Next.js, TypeScript, Tailwind CSS v4, Framer Motion, Lucide React.
+*   **Backend**: Node.js, Express, Zod (Schema Validation), Dotenv.
+*   **Web3**: Ethers.js v6.
+*   **AI**: Gemini API.
+
+### 3.2 Key Algorithms
+**Intent Recognition Algorithm (Simplified)**
+```javascript
+function parseIntent(userQuery, context) {
+  const prompt = `
+    Context: User is on Chain ID ${context.chainId}, Balance: ${context.balance}.
+    Task: Extract intent from "${userQuery}".
+    Output: JSON structure { action, asset, amount, recipient }.
+  `;
+  const response = callLLM(prompt);
+  return validateSchema(JSON.parse(response)); // Zod Validation
+}
 ```
-/root
-├── /frontend          # Next.js Application
-│   ├── /src/app      # Pages (Chat, Market, History)
-│   ├── /src/lib      # Services (marketService, web3, api)
-│   └── /src/components # Reusable UI (ChatInterface, MarketWidget)
-│
-└── /backend           # Express API
-    ├── /src/controllers # Request Handlers
-    ├── /src/services    # Business Logic (LLM, Web3)
-    └── /src/routes      # API Endpoints
-```
 
-## Setup Instructions
+### 3.3 Security Measures
+*   **Input Validation**: All incoming API requests are validated using Zod schemas to prevent injection attacks.
+*   **CORS Policy**: Strict Cross-Origin Resource Sharing settings to prevent unauthorized domain usage.
+*   **Environment Isolation**: API keys are stored in server-side `.env` files, never exposed to the client bundle.
 
-1.  **Backend**:
-    ```bash
-    cd backend
-    npm install
-    # Configure .env with GEMINI_API_KEY
-    npm run dev
-    ```
+---
 
-2.  **Frontend**:
-    ```bash
-    cd frontend
-    npm install
-    npm run dev
-    ```
+## 4. User Manual & Deployment
 
-3.  **Access**: Open `http://localhost:3000`
+### 4.1 Setup
+1.  Clone specific repo.
+2.  `npm install` in root.
+3.  Set `GEMINI_API_KEY` in `backend/.env`.
+4.  `npm run dev` (Concurrent Frontend/Backend start).
+
+### 4.2 Usage
+*   **Connect**: Click "Connect Wallet" (MetaMask required).
+*   **Chat**: Type queries like "What is my balance?" or "Send 0.01 ETH to [Address]".
+*   **Market**: View top movers and trending assets.
