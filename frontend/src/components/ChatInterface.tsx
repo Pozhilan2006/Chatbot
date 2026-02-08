@@ -220,10 +220,13 @@ export default function ChatInterface() {
                             <Send size={18} />
                         </button>
                     </form>
-                    <div className="text-center mt-3">
+                    <div className="flex items-center justify-between mt-3 px-1">
                         <p className="text-[10px] text-gray-600 uppercase tracking-widest">
                             Secure Enclave Active • AI cannot sign transactions
                         </p>
+                        <a href="/chat/market" className="text-[10px] text-violet-400 hover:text-violet-300 uppercase tracking-widest flex items-center gap-1">
+                            View Market Data <ArrowRight size={10} />
+                        </a>
                     </div>
                 </div>
             </div>

@@ -10,7 +10,8 @@ import {
     LogOut,
     Wallet,
     Sparkles,
-    ChevronRight
+    ChevronRight,
+    TrendingUp
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
@@ -40,6 +41,7 @@ export default function Sidebar() {
                 <nav className="space-y-1">
                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-3 mb-3">Menu</p>
                     <NavItem href="/chat" icon={<MessageSquare size={18} />} label="Assistant" active={pathname === '/chat'} />
+                    <NavItem href="/chat/market" icon={<TrendingUp size={18} />} label="Market" active={pathname === '/chat/market'} />
                     <NavItem href="/chat/transactions" icon={<CreditCard size={18} />} label="History" active={pathname === '/chat/transactions'} />
                     <NavItem href="/chat/learn" icon={<BookOpen size={18} />} label="Learn" active={pathname === '/chat/learn'} />
 
@@ -86,8 +88,8 @@ function NavItem({ href, icon, label, active = false }: { href: string, icon: Re
         <Link
             href={href}
             className={`group flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 ${active
-                    ? 'bg-white/5 text-white shadow-sm border border-white/5'
-                    : 'text-gray-400 hover:bg-white/5 hover:text-gray-200 hover:translate-x-1'
+                ? 'bg-white/5 text-white shadow-sm border border-white/5'
+                : 'text-gray-400 hover:bg-white/5 hover:text-gray-200 hover:translate-x-1'
                 }`}
         >
             <div className="flex items-center gap-3">
