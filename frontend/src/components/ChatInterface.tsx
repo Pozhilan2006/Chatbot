@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useWallet } from '@/context/WalletContext';
 import { parseIntent, IntentResponse } from '@/lib/api';
 import TransactionModal from './TransactionModal';
-import { Send, Loader2, Bot, User, AlertCircle, Sparkles, Command } from 'lucide-react';
+import { Send, Loader2, Bot, User, AlertCircle, Sparkles, Command, ArrowRight } from 'lucide-react';
 import { ethers } from 'ethers';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
