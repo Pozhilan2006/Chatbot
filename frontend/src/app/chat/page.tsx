@@ -8,7 +8,7 @@ import ChatInterface from '@/components/ChatInterface';
 import { Wallet } from 'lucide-react';
 
 export default function ChatPage() {
-    const { isConnected } = useWallet();
+    const { isConnected, connect } = useWallet();
     const router = useRouter();
 
     // Remove redirect loop
@@ -35,7 +35,7 @@ export default function ChatPage() {
                     </p>
 
                     <button
-                        onClick={() => window.location.reload()}
+                        onClick={connect}
                         className="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2 group"
                     >
                         <span>Connect MetaMask</span>
