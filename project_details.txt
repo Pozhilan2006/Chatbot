@@ -1,0 +1,77 @@
+# Nexus AI Web3 Chatbot - Project Details
+
+## Project Overview
+Nexus is an AI-powered Web3 assistant designed to simplify blockchain interactions through natural language. It acts as a bridge between users and the complex world of decentralized finance (DeFi), allowing users to check balances, execute transactions, and analyze market trends using simple text commands.
+
+## Technology Stack
+
+### Frontend
+- **Framework**: Next.js 14+ (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS v4 (Glassmorphism, Dark UI)
+- **Web3 Integration**: Ethers.js v6 (Direct window.ethereum injection)
+- **State Management**: React Context (WalletContext), SWR (Data Fetching)
+- **Icons**: Lucide React
+- **Animations**: Framer Motion
+
+### Backend
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Language**: JavaScript (CommonJS)
+- **AI Model**: Google Gemini 1.5/2.0 Flash (via @google/generative-ai SDK)
+- **Validation**: Zod (Schema validation), Ethers.js (Address validation)
+- **Security**: CORS, Environment Variables (.env), Input Sanitization
+
+## Key Features
+
+1.  **Natural Language Transaction Intent**
+    - Users can type commands like "Send 0.05 ETH to 0x123..."
+    - The backend AI parses this into a structured JSON intent (`action`, `amount`, `recipient`, `chain`).
+    - The frontend validates this intent and presents a secure "Transaction Modal" for user confirmation before execution.
+
+2.  **Market Intelligence Dashboard**
+    - **Top Movers**: Real-time tracking of top gainers in Memes, AI, and RWA categories.
+    - **Popular Tokens**: Market cap leaders across Ethereum, Solana, and BSC ecosystems.
+    - **Resilient Data Layer**: Implements a "Smart Fallback" system that switches to cached/mock data if the CoinGecko API rate limits are hit, ensuring 100% uptime for the UI.
+
+3.  **Secure Enclave & Safety**
+    - **Non-Custodial**: The AI *cannot* sign transactions. It only constructs the payload. The user *must* manually sign via their MetaMask wallet.
+    - **Risk Analysis**: The AI analyzes transaction requests for potential security risks (e.g., interacting with known malicious contracts - *future scope*) and flags low-confidence intents.
+
+4.  **Premium UX/UI**
+    - Cinematic "Dark SaaS" aesthetic with ambient gradients and noise textures.
+    - Responsive Sidebar navigation and chat interface.
+    - Smooth transitions and loading states.
+
+## Project Structure
+```
+/root
+├── /frontend          # Next.js Application
+│   ├── /src/app      # Pages (Chat, Market, History)
+│   ├── /src/lib      # Services (marketService, web3, api)
+│   └── /src/components # Reusable UI (ChatInterface, MarketWidget)
+│
+└── /backend           # Express API
+    ├── /src/controllers # Request Handlers
+    ├── /src/services    # Business Logic (LLM, Web3)
+    └── /src/routes      # API Endpoints
+```
+
+## Setup Instructions
+
+1.  **Backend**:
+    ```bash
+    cd backend
+    npm install
+    # Configure .env with GEMINI_API_KEY
+    npm run dev
+    ```
+
+2.  **Frontend**:
+    ```bash
+    cd frontend
+    npm install
+    npm run dev
+    ```
+
+3.  **Access**: Open `http://localhost:3000`

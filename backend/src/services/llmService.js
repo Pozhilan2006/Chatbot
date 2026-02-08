@@ -35,9 +35,11 @@ const parseUserIntent = async (userMessage, walletAddress) => {
 
     } catch (error) {
         console.error('LLM Intent Parsing Error (Gemini):', error);
+        const fs = require('fs');
+        fs.appendFileSync('backend_error.log', `[${new Date().toISOString()}] Error: ${error.message}\n${JSON.stringify(error, null, 2)}\n`);
         return {
             intent_detected: false,
-            error: 'Failed to process intent.',
+            error: `Failed to process intent. Debug: ${error.message}`,
             confidence: 0,
         };
     }
