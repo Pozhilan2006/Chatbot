@@ -70,10 +70,19 @@ export default function ChatInterface() {
 
             setMessages((prev) => [...prev, aiMsg]);
 
-            if (response.intent_detected && response.action === 'transfer' && response.confidence > 0.85) {
+            if (response.intent_detected && response.action === 'transfer' && response.confidence > 0.7) {
                 setCurrentIntent(response);
                 setModalOpen(true);
                 setTxHash(null);
+            } else if (response.intent_detected && response.action === 'transfer') {
+                // Debug message for low confidence
+                const debugMsg: Message = {
+                    id: (Date.now() + 2).toString(),
+                    role: 'assistant',
+                    content: `[DEBUG] Intent detected but confidence low (${(response.confidence * 100).toFixed(0)}%). Please provide more specific details.`,
+                    timestamp: Date.now(),
+                }
+                setMessages(prev => [...prev, debugMsg]);
             }
 
         } catch (error) {
@@ -91,7 +100,17 @@ export default function ChatInterface() {
     };
 
     const executeTransaction = async () => {
-        if (!currentIntent || !signer) return;
+        if (!currentIntent) return;
+
+        if (!signer) {
+            setMessages(prev => [...prev, {
+                id: Date.now().toString(),
+                role: 'assistant',
+                content: 'Error: Wallet not connected or signer unavailable.',
+                timestamp: Date.now()
+            }]);
+            return;
+        }
 
         setIsProcessingTx(true);
         try {
@@ -113,7 +132,16 @@ export default function ChatInterface() {
                 },
             ]);
         } catch (error: any) {
-            // Error handling
+            console.error("Transaction Error:", error);
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: Date.now().toString(),
+                    role: 'assistant',
+                    content: `Transaction Failed: ${error.message || 'User rejected request or insufficient funds.'}`,
+                    timestamp: Date.now(),
+                },
+            ]);
         } finally {
             setIsProcessingTx(false);
         }
