@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3001/api/intent'; // Ensure backend port matches
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api/intent'; // Ensure backend port matches
 
 export interface IntentResponse {
     intent_detected: boolean;
