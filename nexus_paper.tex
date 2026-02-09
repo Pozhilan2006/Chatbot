@@ -9,6 +9,9 @@
 \usepackage{float}
 \usepackage{url}
 \usepackage{multirow}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
@@ -116,12 +119,27 @@ Imagine if sending an email required understanding the TCP/IP handshake, selecti
     \item \textbf{Hexadecimal Anxiety}: Addresses like `0x71C...` are unreadable, memorable, and error-prone. One wrong character means total loss of funds.
     \item \textbf{Network Fragmentation}: Users unknowingly sending USDT on Ethereum to a USDT address on Binance Smart Chain, resulting in asset loss.
     \item \textbf{Gas Volatility}: The concept of paying for computation is foreign to users accustomed to "free" fintech apps like Venmo or PayPal.
+    \item \textbf{Token Approvals}: The concept of "approving" a contract to spend tokens before actually swapping them is deeply counter-intuitive and a major source of phishing attacks.
 \end{itemize}
 
 This complexity creates a "Cognitive Chasm." On one side are the early adopters and developers; on the other is the mainstream public. Bridging this chasm requires more than just better tutorials; it requires a fundamental rethink of the interaction model.
 
 \subsection{The Psychology of "FOMU"}
 While "Fear of Missing Out" (FOMO) drives users to download crypto apps, "Fear of Messing Up" (FOMU) prevents them from actually using them. A 2023 survey indicated that 48\% of dormant wallet users cited "fear of making a mistake" as their primary reason for inactivity. Nexus aims to eliminate FOMU by acting as a \textbf{guardian angel}—a system that validates, explains, and safeguards every action before it happens.
+
+\section{HISTORICAL CONTEXT: EVOLUTION OF WALLET UX}
+
+\subsection{Phase 1: The Command Line Era (2009-2015)}
+In the early days of Bitcoin, interacting with the blockchain required running a full node and executing Command Line Interface (CLI) commands. This era was restricted to cypherpunks and computer scientists.
+
+\subsection{Phase 2: The Graphical Wrapper Era (2016-2020)}
+Wallets like MyEtherWallet and MetaMask introduced GUIs. While clearer than a CLI, they were essentially just visual wrappers around RPC calls. They did not abstract complexity; they merely visualized it. Buttons were labeled with function names (`transfer`, `approve`, `swap`), requiring users to know what these functions meant.
+
+\subsection{Phase 3: The Mobile Era (2020-Present)}
+Rainbow, Phantom, and Argent brought "Apple-like" design polish. They introduced nicer fonts, NFT galleries, and cleaner icons. However, the fundamental interaction model remained imperative: "Select Asset -> Paste Address -> Confirm." The user was still the sole orchestrator of the transaction logic.
+
+\subsection{Phase 4: The Intent Era (Nexus)}
+We propose a fourth phase: \textbf{Intent-Centric Interfaces}. Here, the user declares the "What" ("I want to save money") and the system handles the "How" (Swapping to USDC, depositing into Aave, managing gas). Nexus is a pioneer implementation of this phase, utilizing Generative AI as the translation layer.
 
 \section{DESIGN PHILOSOPHY: HUMAN-CENTRIC WEB3}
 
@@ -131,6 +149,7 @@ Nexus follows the \textbf{Iceberg Principle}:
 \begin{enumerate}
     \item \textbf{Above the Water (User View)}: Simple natural language. "Send money."
     \item \textbf{Below the Water (System View)}: ABI encoding, gas estimation, RPC calls, chain switching, nonce management.
+    \item \textbf{Hidden Depth}: Slippage protection, MEV (Maximal Extractable Value) mitigation, and RPC retries.
 \end{enumerate}
 
 \subsection{Principle 2: Education through Action}
@@ -170,6 +189,8 @@ Platforms like Coinbase or Binance offer a great UX but at the cost of custody. 
 \hline
 \textbf{Privacy} & High & Low (KYC) & High \\
 \hline
+\textbf{Cost} & Gas Only & Fees + Spread & Gas Only (Freemium) \\
+\hline
 \end{tabular}
 \end{center}
 \end{table}
@@ -190,6 +211,7 @@ Key Features:
 \begin{itemize}
     \item \textbf{Auto-Suggest}: As the user types, the system suggests valid actions, reducing the "Blank Page Syndrome."
     \item \textbf{Rich Responses}: The bot doesn't just reply with text; it replies with interactive widgets (Price Cards, Transaction Modals).
+    \item \textbf{Ambient Feedback}: The background color shifts subtly to indicate network status (e.g., pulsing red if the network is down).
 \end{itemize}
 
 \subsection{The Intelligence Plane: Google Gemini}
@@ -199,11 +221,21 @@ The LLM is prompted with a specific "Persona":
 "You are Nexus, a patient, helpful, and safety-conscious blockchain guide. Your goal is to help beginners understand and execute actions safely. Never assume knowledge. Always explain risky actions."
 \end{quote}
 
+\subsubsection{Prompt Engineering Strategy}
+To ensure consistent results, we employ a "Chain of Thought" prompting strategy.
+\begin{itemize}
+    \item \textbf{Phase 1: Classification}. Is the user asking for info, or a transaction?
+    \item \textbf{Phase 2: Extraction}. If transaction, extract [Action, Asset, Amount, Recipient].
+    \item \textbf{Phase 3: Validation}. Check if these parameters make sense in the current context (e.g., checking user balance).
+    \item \textbf{Phase 4: Synthesis}. Generate the JSON response.
+\end{itemize}
+
 \subsection{The Execution Plane: Safety Checks}
 Before any transaction is constructed, Nexus runs a suite of "Pre-Flight Checks":
 1.  \textbf{Balance Check}: Does the user have enough funds for the transfer + gas?
 2.  \textbf{Address Sanity}: Is the recipient address valid for this chain?
 3.  \textbf{Contract Detection}: Is the recipient a smart contract? If so, warn the user (as sending tokens to contracts often results in loss).
+4.  \textbf{Simulation}: We simulate the transaction locally to see if it will revert. If it will revert, we block the user from sending it, saving them gas.
 
 \subsection{Data Flow Diagram}
 \begin{enumerate}
@@ -215,6 +247,7 @@ Before any transaction is constructed, Nexus runs a suite of "Pre-Flight Checks"
     \item \textbf{User Review}: Frontend displays the "Human Readable" summary.
     \item \textbf{Signature}: User approves via non-custodial wallet.
     \item \textbf{Broadcast}: Transaction sent to the mempool.
+    \item \textbf{Confirmation}: System watches for block inclusion and notifies user.
 \end{enumerate}
 
 \section{THREAT MODELING AND SECURITY}
@@ -230,6 +263,10 @@ Before any transaction is constructed, Nexus runs a suite of "Pre-Flight Checks"
 \subsection{Threat: Man-in-the-Middle (MITM)}
 \textbf{Risk}: An attacker intercepts the chat stream.
 \textbf{Mitigation}: All communications are encrypted via HTTPS (TLS 1.3). The actual signing happens locally on the user's device, meaning private keys never traverse the network.
+
+\subsection{Threat: Phishing via UI Spoofing}
+\textbf{Risk}: A malicious site looks like Nexus.
+\textbf{Mitigation}: Nexus encourages users to verify the domain. Additionally, the final confirmation always happens in the user's browser extension (MetaMask), which has its own anti-phishing blocklists.
 
 \section{USER JOURNEY WALKTHROUGH}
 
@@ -256,6 +293,15 @@ Before any transaction is constructed, Nexus runs a suite of "Pre-Flight Checks"
 \end{itemize}
 \textbf{Result}: The system proactively prevents the user from "bricking" their wallet by spending all their gas money—a classic beginner mistake.
 
+\subsection{Scenario 3: The Panic}
+\textbf{Intent}: User thinks they lost money.
+\textbf{Interaction}:
+\begin{itemize}
+    \item User: "My transaction is stuck! Help!"
+    \item Nexus: "Don't worry. I see a pending transaction with Nonce 5. The network is currently congested. You can either wait (it typically takes 10 mins right now) or I can help you 'Speed Up' the transaction by adding a bit more gas. Which would you prefer?"
+\end{itemize}
+\textbf{Result}: The system calms the user and offers actionable solutions to technical problems.
+
 \section{HEURISTIC EVALUATION}
 
 We evaluated Nexus against Nielsen's 10 Usability Heuristics for User Interface Design.
@@ -268,6 +314,14 @@ We evaluated Nexus against Nielsen's 10 Usability Heuristics for User Interface 
 \textbf{Goal}: The system should speak the users' language.
 \textbf{Nexus}: We strictly banish terms like "WEI", "Gwei", "Nonce", and "Confirmation Time". We use "Fees," "Seconds," and "Sequence ID" only if absolutely necessary, but prefer plain English equivalents.
 
+\subsection{User Control and Freedom}
+\textbf{Goal}: Users often choose system functions by mistake and will need a clearly marked "emergency exit".
+\textbf{Nexus}: Every transaction modal has a large "Cancel" button. Chat flows can be reset by typing "Restart" or "Cancel".
+
+\subsection{Consistency and Standards}
+\textbf{Goal}: Users should not have to wonder whether different words, situations, or actions mean the same thing.
+\textbf{Nexus}: We follow standard "Chat" UI patterns (bubbles, timestamps, avatars) that users know from WhatsApp or iMessage.
+
 \subsection{Error Prevention}
 \textbf{Goal}: Even better than good error messages is a careful design which prevents a problem from occurring in the first place.
 \textbf{Nexus}: The "Smart Fallback" and "Pre-Flight Checks" are error prevention mechanisms. By validating addresses off-chain before the wallet even opens, we prevent failed transactions that would still cost the user gas fees.
@@ -279,6 +333,9 @@ When an AI suggests a transaction, users may perceive it as "Financial Advice." 
 
 \subsection{Accessibility and Inclusion}
 Cryptocurrency is global. We are committed to making Nexus accessible to non-English speakers. Future updates will leverage the LLM's translation capabilities to support Spanish, Mandarin, Hindi, and French natively, ensuring that the "unbanked" in developing nations can participate in the digital economy.
+
+\subsection{The Environmental Impact}
+While Proof-of-Work chains had high energy costs, modern Ethereum (PoS) is green. However, running LLMs utilizes GPU power. We optimize our prompts to be short (few-shot), minimizing the token count and thus the computational energy required per interaction.
 
 \section{PERFORMANCE METRICS}
 
@@ -317,14 +374,15 @@ We implement a "Data Minimization" strategy. We do not store chat logs permanent
 \section{CONCLUSION}
 Mass adoption of blockchain technology will not be achieved by expecting the public to become computer scientists. It will be achieved by software that meets the user where they are. Nexus demonstrates that Generative AI is the perfect tool to build this bridge. By translating the rigid, unforgiving logic of the blockchain into the fluid, forgiving medium of human language, we lower the learning curve from a vertical wall to a gentle ramp. 
 
-Nexus is more than an interface; it is an argument for a more inclusive, empathetic approach to Web3 design.
+Nexus is more than an interface; it is an argument for a more inclusive, empathetic approach to Web3 design. We envision a future where "Using Blockchain" feels as natural as "Sending a Text," and Nexus is the first step toward that reality.
 
 \section{FUTURE WORK}
 \begin{itemize}
-    \item \textbf{Voice Integration}: Allowing hands-free operation for accessibility.
+    \item \textbf{Voice Integration}: Integrating the Web Speech API to allow hands-free voice commands ("Hey Nexus, send 5 bucks to mom").
     \item \textbf{Multilingual Support}: Using the LLM to instantly translate the interface into 50+ languages, opening DeFi to the non-English speaking world.
     \item \textbf{Social Recovery}: Integrating with ERC-4337 to allow users to recover accounts via trusted friends/guardians.
     \item \textbf{Mobile-First Design}: Porting the experience to a React Native mobile application for on-the-go access.
+    \item \textbf{Decentralized AI}: Running the LLM node itself on a decentralized compute network (like Akash or Render) to remove the reliance on Google's API, making the entire stack censorship-resistant.
 \end{itemize}
 
 \section{APPENDIX A: USER MANUAL}
@@ -339,6 +397,7 @@ Nexus is more than an interface; it is an argument for a more inclusive, empathe
     \item **The Chat Stream**: The central area where you converse with Nexus.
     \item **The Input Bar**: Type your questions or commands here.
     \item **The Sidebar**: Shows your quick stats—Balance, Recent Activity, and Market Trends.
+    \item **The Notification Center**: Located in the top right, alerts you to completed actions.
 \end{itemize}
 
 \subsection{Common Commands Cheat Sheet}
@@ -347,6 +406,7 @@ Nexus is more than an interface; it is an argument for a more inclusive, empathe
     \item \textbf{Send Funds}: "Send 10 USDC to [Address]" / "Pay Bob 0.5 ETH"
     \item \textbf{Market Data}: "Is Bitcoin up today?" / "Show me the top gainers"
     \item \textbf{Education}: "What is gas?" / "Why did my transaction fail?"
+    \item \textbf{History}: "Show me my last 5 transactions."
 \end{itemize}
 
 \subsection{Troubleshooting Guide}
@@ -359,26 +419,38 @@ Nexus is more than an interface; it is an argument for a more inclusive, empathe
     
     \item \textbf{Problem}: "My balance isn't updating."
     \item \textbf{Solution}: Refresh the page. Blockchain networks can sometimes lag by 10-20 seconds.
+    
+    \item \textbf{Problem}: "Transaction failed."
+    \item \textbf{Solution}: You may be out of gas (ETH). Check if you have enough ETH to cover the network fee, not just the amount you are sending.
 \end{itemize}
 
 \section{APPENDIX B: BEGINNER'S GLOSSARY}
 
 \textbf{Address}: Like a bank account number. A long string of characters starting with `0x`.
 
+\textbf{Blockchain}: A digital ledger that records all transactions transparently and permanently.
+
+\textbf{DeFi (Decentralized Finance)}: Financial tools that run on code, without banks.
+
 \textbf{Gas}: The fee you pay to the network to process your transaction. Think of it like shipping costs for a package.
 
-\textbf{Wallet}: The tool (like MetaMask) that holds your keys. Nexus connects to this.
+\textbf{MetaMask}: A popular browser wallet that lets you store crypto and talk to apps like Nexus.
 
-\textbf{Transaction (Tx)}: Any action that changes data on the blockchain, like sending money.
-
-\textbf{Confirmation}: When the network has officially recorded your transaction. It is irreversible after this.
+\textbf{Seed Phrase}: A list of 12-24 words that acts as your master password. NEVER share this with anyone, not even Nexus.
 
 \textbf{Slippage}: The difference between the expected price of a trade and the executed price. High slippage happens in volatile markets.
 
 \textbf{Smart Contract}: A self-executing contract with the terms of the agreement directly written into code.
 
+\textbf{Token}: A digital asset built on top of a blockchain (like USDC on Ethereum).
+
+\textbf{Transaction (Tx)}: Any action that changes data on the blockchain, like sending money.
+
+\textbf{Wallet}: The tool (like MetaMask) that holds your keys. Nexus connects to this.
+
+
 \section*{ACKNOWLEDGMENT}
-We thank the open-source community, specifically the developers of Ethers.js, Next.js, and the Google Gemini team, for providing the robust tools that make this "friendly" future possible.
+We thank the open-source community, specifically the developers of Ethers.js, Next.js, and the Google Gemini team, for providing the robust tools that make this "friendly" future possible. We also acknowledge the mentors at the University Institute of Technology for their guidance on HCI principles.
 
 \section*{REFERENCES}
 
@@ -414,6 +486,9 @@ We thank the open-source community, specifically the developers of Ethers.js, Ne
 \bibitem{b28} P. Daian et al., ``Flash Boys 2.0: Frontrunning, Transaction Reordering, and Consensus Instability in Decentralized Exchanges,'' \textit{arXiv preprint arXiv:1904.05234}, 2019.
 \bibitem{b29} ConsenSys, ``DeFi User Report Q1 2024,'' 2024.
 \bibitem{b30} MetaMask, ``MetaMask Monthly Active Users Report,'' 2023.
+\bibitem{b31} K. Werbach, ``The Blockhcain and the New Architecture of Trust,'' MIT Press, 2018.
+\bibitem{b32} N. Szabo, ``Smart Contracts: Building Blocks for Digital Markets,'' 1996.
+\bibitem{b33} Uniswap Labs, ``Uniswap V3 Core Whitepaper,'' 2021.
 
 \end{thebibliography}
 
