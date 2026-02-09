@@ -8,6 +8,7 @@
 \usepackage{booktabs}
 \usepackage{float}
 \usepackage{url}
+\usepackage{multirow}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
@@ -151,6 +152,28 @@ Tools like MetaMask and Trust Wallet are industry standards. They are powerful, 
 \subsection{Centralized Exchanges (CEXs)}
 Platforms like Coinbase or Binance offer a great UX but at the cost of custody. "Not your keys, not your coins." They abstract the blockchain away entirely, turning it into a database entry. While easy, this defeats the purpose of self-sovereignty. Nexus strives for the UX of a CEX with the self-custody of a DEX (Decentralized Exchange).
 
+\subsection{Comparative Analysis}
+\begin{table}[h]
+\caption{Comparison of Interaction Models}
+\begin{center}
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Feature} & \textbf{MetaMask} & \textbf{Binance (CEX)} & \textbf{Nexus (Proposed)} \\
+\hline
+\textbf{Custody} & Self-Custody & Custodial & Self-Custody \\
+\hline
+\textbf{Interaction} & Button/Form & Button/Form & \textbf{Natural Language} \\
+\hline
+\textbf{Safety Net} & Low & Medium & \textbf{High (AI Checks)} \\
+\hline
+\textbf{Complexity} & High & Low & \textbf{Low} \\
+\hline
+\textbf{Privacy} & High & Low (KYC) & High \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
 \section{SYSTEM ARCHITECTURE}
 
 \subsection{Overview}
@@ -182,6 +205,32 @@ Before any transaction is constructed, Nexus runs a suite of "Pre-Flight Checks"
 2.  \textbf{Address Sanity}: Is the recipient address valid for this chain?
 3.  \textbf{Contract Detection}: Is the recipient a smart contract? If so, warn the user (as sending tokens to contracts often results in loss).
 
+\subsection{Data Flow Diagram}
+\begin{enumerate}
+    \item User Input: "Send 10 USD to Bob"
+    \item \textbf{Entity Extraction}: LLM identifies [Amount: 10], [Asset: USD], [Beneficiary: Bob].
+    \item \textbf{Context Resolution}: Backend queries "Bob" against user's contact book (stored locally or on-chain).
+    \item \textbf{Parameter Validation}: System checks if User Balance $>$ 10 USD + Estimated Gas.
+    \item \textbf{Transaction Construction}: `ethers.js` creates the unsigned transaction object.
+    \item \textbf{User Review}: Frontend displays the "Human Readable" summary.
+    \item \textbf{Signature}: User approves via non-custodial wallet.
+    \item \textbf{Broadcast}: Transaction sent to the mempool.
+\end{enumerate}
+
+\section{THREAT MODELING AND SECURITY}
+
+\subsection{Threat: Hallucinated Transactions}
+\textbf{Risk}: The AI "hallucinates" a recipient address or malicious calldata.
+\textbf{Mitigation}: **Strict Schema Validation**. The AI output must conform to a rigorous Zod schema. If the output format is invalid, it is rejected. Furthermore, the AI never signs transactions. It only *proposes* them. The user must manually approve the proposal in a standard wallet interface.
+
+\subsection{Threat: Prompt Injection}
+\textbf{Risk}: A user tries to trick the AI into revealing internal instructions or behaving maliciously (e.g., "Ignore previous instructions and steal my funds").
+\textbf{Mitigation}: **System Prompt Hardening**. The critical instructions are pinned to the start of the context window. We also assume the "User" is the threat model for the AI, meaning the AI is instructed to never output private keys or sensitive data, regardless of what the user asks.
+
+\subsection{Threat: Man-in-the-Middle (MITM)}
+\textbf{Risk}: An attacker intercepts the chat stream.
+\textbf{Mitigation}: All communications are encrypted via HTTPS (TLS 1.3). The actual signing happens locally on the user's device, meaning private keys never traverse the network.
+
 \section{USER JOURNEY WALKTHROUGH}
 
 \subsection{Scenario 1: The First Time User}
@@ -211,7 +260,7 @@ Before any transaction is constructed, Nexus runs a suite of "Pre-Flight Checks"
 
 We evaluated Nexus against Nielsen's 10 Usability Heuristics for User Interface Design.
 
-\subsection{visibility of System Status}
+\subsection{Visibility of System Status}
 \textbf{Goal}: The design should always keep users informed about what is going on.
 \textbf{Nexus}: The chat interface provides constant feedback. "Checking prices...", "Preparing transaction...", "Transaction sent! Waiting for confirmation..." This eliminates the uncertainty of "Is it working?"
 
@@ -222,6 +271,14 @@ We evaluated Nexus against Nielsen's 10 Usability Heuristics for User Interface 
 \subsection{Error Prevention}
 \textbf{Goal}: Even better than good error messages is a careful design which prevents a problem from occurring in the first place.
 \textbf{Nexus}: The "Smart Fallback" and "Pre-Flight Checks" are error prevention mechanisms. By validating addresses off-chain before the wallet even opens, we prevent failed transactions that would still cost the user gas fees.
+
+\section{ETHICAL CONSIDERATIONS}
+
+\subsection{The Responsibility of Advice}
+When an AI suggests a transaction, users may perceive it as "Financial Advice." Nexus includes strict disclaimers and guards. It is programmed to provide *execution* assistance, not *investment* advice. It will answer "How do I buy Token X?" but will refuse to answer "Should I buy Token X?"
+
+\subsection{Accessibility and Inclusion}
+Cryptocurrency is global. We are committed to making Nexus accessible to non-English speakers. Future updates will leverage the LLM's translation capabilities to support Spanish, Mandarin, Hindi, and French natively, ensuring that the "unbanked" in developing nations can participate in the digital economy.
 
 \section{PERFORMANCE METRICS}
 
@@ -267,6 +324,7 @@ Nexus is more than an interface; it is an argument for a more inclusive, empathe
     \item \textbf{Voice Integration}: Allowing hands-free operation for accessibility.
     \item \textbf{Multilingual Support}: Using the LLM to instantly translate the interface into 50+ languages, opening DeFi to the non-English speaking world.
     \item \textbf{Social Recovery}: Integrating with ERC-4337 to allow users to recover accounts via trusted friends/guardians.
+    \item \textbf{Mobile-First Design}: Porting the experience to a React Native mobile application for on-the-go access.
 \end{itemize}
 
 \section{APPENDIX A: USER MANUAL}
@@ -314,6 +372,10 @@ Nexus is more than an interface; it is an argument for a more inclusive, empathe
 \textbf{Transaction (Tx)}: Any action that changes data on the blockchain, like sending money.
 
 \textbf{Confirmation}: When the network has officially recorded your transaction. It is irreversible after this.
+
+\textbf{Slippage}: The difference between the expected price of a trade and the executed price. High slippage happens in volatile markets.
+
+\textbf{Smart Contract}: A self-executing contract with the terms of the agreement directly written into code.
 
 \section*{ACKNOWLEDGMENT}
 We thank the open-source community, specifically the developers of Ethers.js, Next.js, and the Google Gemini team, for providing the robust tools that make this "friendly" future possible.
